@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq;
 
-namespace Mozu_BED_Training_Exercise_11_1
+namespace Mozu_BED_Training_Exercise_11_2
 {
     [TestClass]
     public class MozuDataConnectorTests
@@ -97,7 +97,15 @@ namespace Mozu_BED_Training_Exercise_11_1
             var categoryResource = new Mozu.Api.Resources.Commerce.Catalog.Admin.CategoryResource(_apiContext);
             var productAttributeResource = new Mozu.Api.Resources.Commerce.Catalog.Admin.Attributedefinition.AttributeResource(_apiContext);
 
-            productResource.DeleteProductAsync(productCode).Wait();
+            //Wrap the Delete call in a try/catch in case the product doesn't exist
+            try
+            {
+                productResource.DeleteProductAsync(productCode).Wait();
+            }
+            catch(Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine(e.Message);
+            }
 
             //Retrieve the objects for later use when constructing our product
             var monogram = productAttributeResource.GetAttributeAsync("tenant~monogram").Result;
