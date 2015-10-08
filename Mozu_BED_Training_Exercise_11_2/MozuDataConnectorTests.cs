@@ -80,7 +80,7 @@ namespace Mozu_BED_Training_Exercise_11_2
             var inventory = inventoryResource.GetLocationInventoryAsync("WRH01", "LUC-BAG-007").Result;
             
             //Demostrate utility methods
-            var collectionsList =  await StoreMultipleProductCollections(productResource);
+            var allProducts = await GetAllProducts(productResource);
                         
         }
 
@@ -242,13 +242,14 @@ namespace Mozu_BED_Training_Exercise_11_2
         }
 
         /// <summary>
-        /// Helper method for returning multiple Product Collections if the page size is greater than 1
+        /// Helper method for returning a List<Products> from multiple Product Collections if the page size is greater than 1
         /// </summary>
         /// <param name="productResource">Apicontext-driven </param>
-        private async static Task<List<Mozu.Api.Contracts.ProductAdmin.Product>> StoreMultipleProductCollections(Mozu.Api.Resources.Commerce.Catalog.Admin.ProductResource productResource)
+        private async static Task<List<Mozu.Api.Contracts.ProductAdmin.Product>> GetAllProducts(Mozu.Api.Resources.Commerce.Catalog.Admin.ProductResource productResource)
         {
             var productCollectionsTaskList = new List<Task<Mozu.Api.Contracts.ProductAdmin.ProductCollection>>();
             var productCollectionsList = new List<Mozu.Api.Contracts.ProductAdmin.ProductCollection>();
+            var productsList = new List<Mozu.Api.Contracts.ProductAdmin.Product>();
             var totalProductCount = 0;
             var startIndex = 0;
             var pageSize = 1;
@@ -256,7 +257,7 @@ namespace Mozu_BED_Training_Exercise_11_2
             var productCollection = await productResource.GetProductsAsync(pageSize: pageSize, startIndex: startIndex);
             totalProductCount = productCollection.TotalCount;
             startIndex += pageSize;
-            productCollectionsList.Add(productCollection);
+            productsList.AddRange(productCollection.Items);
 
             while (totalProductCount > startIndex)
             {
@@ -269,28 +270,10 @@ namespace Mozu_BED_Training_Exercise_11_2
                 var finishedTask = await Task.WhenAny(productCollectionsTaskList);
                 productCollectionsTaskList.Remove(finishedTask);
 
-                productCollectionsList.Add(await finishedTask);
+                productsList.AddRange((await finishedTask).Items);
             }
 
-            return ReturnProductsFromProductCollections(productCollectionsList);
-        }
-
-        /// <summary>
-        /// Helper method breaking multiple ProductCollections into a List<Products>
-        /// </summary>
-        /// <param name="productCollectionList">A List<ProductCollection></param>
-        private static List<Mozu.Api.Contracts.ProductAdmin.Product> ReturnProductsFromProductCollections(List<Mozu.Api.Contracts.ProductAdmin.ProductCollection> productCollections)
-        {
-            var allProducts = new List<Mozu.Api.Contracts.ProductAdmin.Product>();
-            foreach (var collection in productCollections)
-            {
-                foreach (var product in collection.Items)
-                {
-                    allProducts.Add(product);
-                }
-            }
-
-            return allProducts;
+            return productsList;
         }
     }
 }
